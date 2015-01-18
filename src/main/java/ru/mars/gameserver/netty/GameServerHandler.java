@@ -1,7 +1,8 @@
-package ru.mars.seawar.server.network.netty;
+package ru.mars.gameserver.netty;
 
 import org.apache.log4j.Logger;
 import org.jboss.netty.channel.*;
+import ru.mars.gameserver.Parameters;
 import ru.mars.seawar.server.game.GameWorker;
 
 /**
@@ -27,7 +28,8 @@ public class GameServerHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) {
         if (e instanceof ChannelStateEvent)
-            logger.info("Handle upstream : " + e.toString());
+            if (Parameters.getInstance().isDebug())
+                logger.info("Handle upstream : " + e.toString());
         try {
             super.handleUpstream(ctx, e);
         } catch (Exception e1) {
@@ -43,7 +45,7 @@ public class GameServerHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        if (e instanceof ChannelStateEvent)
+        if (e instanceof ChannelStateEvent) if (Parameters.getInstance().isDebug())
             logger.info("channel disconnected : " + e.toString());
         try {
             GameWorker.getInstance().removePlayer(e.getChannel());

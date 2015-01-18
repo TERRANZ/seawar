@@ -1,11 +1,13 @@
-package ru.mars.seawar.server.network;
+package ru.mars.gameserver.netty;
 
+import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import ru.mars.seawar.server.network.netty.ChannelsHolder;
-import ru.mars.seawar.server.network.netty.GameServerPipeLineFactory;
+import ru.mars.gameserver.Parameters;
+import ru.mars.gameserver.netty.ChannelsHolder;
+import ru.mars.gameserver.netty.GameServerPipeLineFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,6 +25,8 @@ public class GameServer {
     }
 
     public void start() {
+        if (Parameters.getInstance().isDebug())
+            Logger.getLogger(this.getClass()).info("Starting server at port " + port);
         ServerBootstrap bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
         bootstrap.setPipelineFactory(new GameServerPipeLineFactory());
         Channel channel = bootstrap.bind(new InetSocketAddress(port));

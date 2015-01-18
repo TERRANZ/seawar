@@ -1,4 +1,4 @@
-package ru.mars.seawar.server.network.netty;
+package ru.mars.gameserver.netty;
 
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;

@@ -6,19 +6,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import ru.mars.seawar.server.game.GameThread;
+import ru.mars.seawar.server.game.MessageType;
 import ru.mars.seawar.server.game.PairFinder;
 import ru.mars.seawar.server.game.Player;
-import ru.mars.seawar.server.game.Statistic;
-import ru.mars.seawar.server.network.message.MessageFactory;
-import ru.mars.seawar.server.network.message.MessageType;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.WeakHashMap;
 
 /**
  * Date: 07.01.15
@@ -26,16 +22,13 @@ import java.util.concurrent.Executors;
  */
 public abstract class AbstractGameWorker {
     protected Logger logger = Logger.getLogger(this.getClass());
-    protected Map<Channel, GameState> gameStateMap = new HashMap<>();
-    protected Map<Channel, Player> playerMap = new HashMap<>();
-    protected Map<Channel, GameThread> gameThreadMap = new HashMap<>();
-    protected PairFinder pairFinder;
-
-    protected ExecutorService service = Executors.newFixedThreadPool(11);
+    protected Map<Channel, GameState> gameStateMap = new WeakHashMap<>();
+    protected Map<Channel, Player> playerMap = new WeakHashMap<>();
+    protected Map<Channel, GameThread> gameThreadMap = new WeakHashMap<>();
+    protected Parameters parameters = Parameters.getInstance();
 
     protected void startPairFinder() {
-        pairFinder = new PairFinder();
-        service.submit(pairFinder);
+        new Thread(new PairFinder()).start();
     }
 
     public synchronized void addPlayer(Channel channel) {
@@ -45,14 +38,15 @@ public abstract class AbstractGameWorker {
 
     public synchronized void removePlayer(Channel channel) {
         if (playerMap.containsKey(channel)) {
-            gameThreadMap.get(channel).playerDisconnect(channel);
-            gameStateMap.remove(channel);
-            playerMap.remove(channel);
+            if (gameThreadMap.get(channel) != null)
+                gameThreadMap.get(channel).playerDisconnect(channel);
+            cleanupPlayer(channel);
         }
     }
 
     public synchronized void handlePlayerCommand(Channel channel, String xml) {
-        logger.info("Received xml = " + xml + " from channel " + channel.toString());
+        if (parameters.isDebug())
+            logger.info("Received xml = " + xml + " from channel " + channel.toString());
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = null;
         Document doc = null;
@@ -71,10 +65,12 @@ public abstract class AbstractGameWorker {
             Integer command = Integer.parseInt(root.getElementsByTagName("id").item(0).getTextContent());
 
             if (command == MessageType.C_PING) {
-                logger.info("PING");
+                if (parameters.isDebug())
+                    logger.info("PING");
                 channel.write(MessageFactory.createPingMessage(getStatistic()));
             } else if (command == MessageType.C_PLAYER_CANCEL_WAIT) {
-                logger.info("Player " + channel + " cancelled waiting");
+                if (parameters.isDebug())
+                    logger.info("Player " + channel + " cancelled waiting");
                 channel.write(MessageFactory.wrap(MessageType.S_GAME_OVER, ""));
                 gameStateMap.put(channel, GameState.LOGIN);
             } else
@@ -120,6 +116,18 @@ public abstract class AbstractGameWorker {
     }
 
     public synchronized void startGameThread(GameThread gameThread) {
-        service.submit(gameThread);
+        new Thread(gameThread).start();
+    }
+
+    public void cleanupPlayer(Channel channel) {
+        synchronized (playerMap) {
+            playerMap.remove(channel);
+        }
+        synchronized (gameStateMap) {
+            gameStateMap.remove(channel);
+        }
+        synchronized (gameThreadMap) {
+            gameThreadMap.remove(channel);
+        }
     }
 }

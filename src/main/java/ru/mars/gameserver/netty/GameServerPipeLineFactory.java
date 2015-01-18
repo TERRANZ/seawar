@@ -1,4 +1,4 @@
-package ru.mars.seawar.server.network.netty;
+package ru.mars.gameserver.netty;
 
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;

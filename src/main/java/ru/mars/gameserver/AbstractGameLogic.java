@@ -4,11 +4,10 @@ import org.apache.log4j.Logger;
 import org.jboss.netty.channel.Channel;
 import ru.mars.seawar.server.game.GameWorker;
 import ru.mars.seawar.server.game.Player;
-import ru.mars.seawar.server.network.message.MessageFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 
 /**
  * Date: 04.11.14
@@ -21,7 +20,7 @@ public abstract class AbstractGameLogic {
     protected int[][] player2field1 = new int[10][10];
     protected int[][] player1field2 = new int[10][10];
     protected int[][] player2field2 = new int[10][10];
-    protected Map<Channel, Boolean> playerReady = new HashMap<>();
+    protected Map<Channel, Boolean> playerReady = new WeakHashMap<>();
     protected Logger logger = Logger.getLogger(this.getClass());
     protected boolean firstPlayerMove = false;
     protected volatile Boolean game = true;
@@ -40,6 +39,7 @@ public abstract class AbstractGameLogic {
     protected void sendGameOverMessage(Integer deadPlayer) {
         channel1.write(MessageFactory.createGameOverMessage(deadPlayer));
         channel2.write(MessageFactory.createGameOverMessage(deadPlayer));
+
     }
 
     public synchronized void playerDisconnect(Channel channel) {

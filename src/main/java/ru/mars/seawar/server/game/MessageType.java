@@ -1,4 +1,4 @@
-package ru.mars.seawar.server.network.message;
+package ru.mars.seawar.server.game;
 
 /**
  * Date: 01.11.14

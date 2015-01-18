@@ -3,8 +3,8 @@ package ru.mars.seawar.server.game;
 import org.apache.log4j.Logger;
 import org.jboss.netty.channel.Channel;
 import ru.mars.gameserver.GameState;
-import ru.mars.seawar.server.network.message.MessageFactory;
-import ru.mars.seawar.server.network.message.MessageType;
+import ru.mars.gameserver.Parameters;
+import ru.mars.gameserver.MessageFactory;
 
 /**
  * Date: 03.11.14
@@ -27,6 +27,8 @@ public class PairFinder implements Runnable {
                             else if (chan2 == null && !chan1.equals(channel))
                                 chan2 = channel;
                         if (chan1 != null && chan2 != null) {
+                            if (Parameters.getInstance().isDebug())
+                                logger.info(chan1 + " and " + chan2 + " are in pair");
                             chan1.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 1 + "</id>"));
                             chan2.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 2 + "</id>"));
                             GameThread gameThread = new GameThread(chan1, chan2, GameWorker.getInstance().getPlayer(chan1), GameWorker.getInstance().getPlayer(chan2));
