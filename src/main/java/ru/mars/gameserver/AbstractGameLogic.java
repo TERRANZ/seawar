@@ -24,6 +24,7 @@ public abstract class AbstractGameLogic {
     protected Logger logger = Logger.getLogger(this.getClass());
     protected boolean firstPlayerMove = false;
     protected volatile Boolean game = true;
+    protected Parameters parameters = Parameters.getInstance();
 
     public synchronized void setPlayerReady(Channel playerChannel) {
         playerReady.put(playerChannel, true);

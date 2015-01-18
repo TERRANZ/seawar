@@ -29,8 +29,8 @@ public class PairFinder implements Runnable {
                         if (chan1 != null && chan2 != null) {
                             if (Parameters.getInstance().isDebug())
                                 logger.info(chan1 + " and " + chan2 + " are in pair");
-                            chan1.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 1 + "</id>"));
-                            chan2.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 2 + "</id>"));
+                            chan1.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<player>" + 1 + "</player>"));
+                            chan2.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<player>" + 2 + "</player>"));
                             GameThread gameThread = new GameThread(chan1, chan2, GameWorker.getInstance().getPlayer(chan1), GameWorker.getInstance().getPlayer(chan2));
                             GameWorker.getInstance().addGameThreadForChannel(chan1, gameThread);
                             GameWorker.getInstance().addGameThreadForChannel(chan2, gameThread);

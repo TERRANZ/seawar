@@ -33,15 +33,7 @@ public class MessageFactory {
         return wrap(MessageType.S_PING, "<text> hello </text> <online>" + statistic.getOnline() + "</online><games>" + statistic.getGames() + "</games>");
     }
 
-    public static String createWaitMessage() {
-        return wrap(MessageType.S_WAIT, "");
-    }
-
     public static String createGameOverMessage(Integer deadPlayer) {
         return wrap(MessageType.S_GAME_OVER, "<deadplayer>" + deadPlayer + "</deadplayer>");
-    }
-
-    public static String createPairFoundMessage(int playerNum) {
-        return wrap(MessageType.S_PAIR_FOUND, "<playerid>" + playerNum + "</playerid>");
     }
 }
