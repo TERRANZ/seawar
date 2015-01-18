@@ -6,6 +6,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import ru.mars.seawar.server.game.GameThread;
+import ru.mars.seawar.server.game.PairFinder;
 import ru.mars.seawar.server.game.Player;
 import ru.mars.seawar.server.game.Statistic;
 import ru.mars.seawar.server.network.message.MessageFactory;
@@ -16,10 +17,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * Date: 07.01.15
@@ -29,9 +28,15 @@ public abstract class AbstractGameWorker {
     protected Logger logger = Logger.getLogger(this.getClass());
     protected Map<Channel, GameState> gameStateMap = new HashMap<>();
     protected Map<Channel, Player> playerMap = new HashMap<>();
-    protected Map<Future, Channel> finders = new WeakHashMap<>();
-    protected ExecutorService service = Executors.newFixedThreadPool(10);
     protected Map<Channel, GameThread> gameThreadMap = new HashMap<>();
+    protected PairFinder pairFinder;
+
+    protected ExecutorService service = Executors.newFixedThreadPool(11);
+
+    protected void startPairFinder() {
+        pairFinder = new PairFinder();
+        service.submit(pairFinder);
+    }
 
     public synchronized void addPlayer(Channel channel) {
         gameStateMap.put(channel, GameState.LOGIN);
@@ -70,9 +75,8 @@ public abstract class AbstractGameWorker {
                 channel.write(MessageFactory.createPingMessage(getStatistic()));
             } else if (command == MessageType.C_PLAYER_CANCEL_WAIT) {
                 logger.info("Player " + channel + " cancelled waiting");
-                for (Future pairFinder : finders.keySet())
-                    if (finders.get(pairFinder).equals(channel))
-                        pairFinder.cancel(true);//стопаем поиск пары если игрок отказался
+                channel.write(MessageFactory.wrap(MessageType.S_GAME_OVER, ""));
+                gameStateMap.put(channel, GameState.LOGIN);
             } else
                 processCommand(command, root, channel);
 
@@ -107,5 +111,15 @@ public abstract class AbstractGameWorker {
 
     public synchronized Statistic getStatistic() {
         return new Statistic(getPlayerMap().size(), gameThreadMap.size() > 0 ? gameThreadMap.size() / 2 : 0);
+    }
+
+    public Player getPlayer(Channel channel) {
+        synchronized (playerMap) {
+            return playerMap.get(channel);
+        }
+    }
+
+    public synchronized void startGameThread(GameThread gameThread) {
+        service.submit(gameThread);
     }
 }

@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.jboss.netty.channel.Channel;
 import ru.mars.gameserver.GameState;
 import ru.mars.seawar.server.network.message.MessageFactory;
+import ru.mars.seawar.server.network.message.MessageType;
 
 /**
  * Date: 03.11.14
@@ -11,40 +12,37 @@ import ru.mars.seawar.server.network.message.MessageFactory;
  */
 public class PairFinder implements Runnable {
 
-    private Channel player1Channel;
-    private Player player1;
     protected Logger logger = Logger.getLogger(this.getClass());
-
-    public PairFinder(Channel player1Channel, Player player1) {
-        this.player1Channel = player1Channel;
-        this.player1 = player1;
-    }
 
     @Override
     public void run() {
         while (true) {
-            for (Channel player2channel : GameWorker.getInstance().getPlayerMap().keySet()) {
-                if (!player2channel.equals(player1Channel) && GameWorker.getInstance().getPlayerState(player2channel).equals(GameState.LOGGED_IN)) {
-                    Player p = GameWorker.getInstance().getPlayerMap().get(player2channel);
-                    if (!p.isInGame()) {
-                        try {
-                            player1Channel.write(MessageFactory.createPairFoundMessage(1));
-                            player2channel.write(MessageFactory.createPairFoundMessage(2));
-                            GameThread gameThread = new GameThread(player1Channel, player2channel, player1, p);
-                            //добавляем для каналов игру
-                            GameWorker.getInstance().addGameThreadForChannel(player1Channel, gameThread);
-                            GameWorker.getInstance().addGameThreadForChannel(player2channel, gameThread);
-                            GameWorker.getInstance().setPlayerState(player1Channel, GameState.GAME_LOADING);
-                            GameWorker.getInstance().setPlayerState(player2channel, GameState.GAME_LOADING);
-                        } catch (Exception e) {
-                            logger.error("Unable to send pair message", e);
+            try {
+                if (GameWorker.getInstance().getPlayerMap().size() > 1) {
+                    Channel chan1 = null, chan2 = null;
+                    for (Channel channel : GameWorker.getInstance().getPlayerMap().keySet()) {
+                        if (GameWorker.getInstance().getPlayerState(channel).equals(GameState.LOGGED_IN))
+                            if (chan1 == null)
+                                chan1 = channel;
+                            else if (chan2 == null && !chan1.equals(channel))
+                                chan2 = channel;
+                        if (chan1 != null && chan2 != null) {
+                            chan1.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 1 + "</id>"));
+                            chan2.write(MessageFactory.wrap(MessageType.S_PAIR_FOUND, "<id>" + 2 + "</id>"));
+                            GameThread gameThread = new GameThread(chan1, chan2, GameWorker.getInstance().getPlayer(chan1), GameWorker.getInstance().getPlayer(chan2));
+                            GameWorker.getInstance().addGameThreadForChannel(chan1, gameThread);
+                            GameWorker.getInstance().addGameThreadForChannel(chan2, gameThread);
+                            GameWorker.getInstance().setPlayerState(chan1, GameState.GAME_LOADING);
+                            GameWorker.getInstance().setPlayerState(chan2, GameState.GAME_LOADING);
+                            GameWorker.getInstance().startGameThread(gameThread);
                         }
-                        return;
                     }
                 }
+            } catch (Exception e) {
+                logger.error("Error while finding pair", e);
             }
             try {
-                Thread.sleep(500);//засыпаем на полминуты, если не найдена пара и увеличиваем разброс
+                Thread.sleep(500);//засыпаем на полсекунды, если не найдена пара
             } catch (InterruptedException e) {
                 logger.error("Interrupted while sleeping", e);
             }

@@ -25,6 +25,10 @@ public class MessageFactory {
         return sb.toString();
     }
 
+    public static String wrap(int msgId, String msg) {
+        return footer(header(msgId) + msg);
+    }
+
     public static String createPingMessage(Statistic statistic) {
         return footer(header(MessageType.S_PING) + "<text> hello </text> <online>" + statistic.getOnline() + "</online><games>" + statistic.getGames() + "</games>");
     }

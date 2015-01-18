@@ -2,7 +2,6 @@ package ru.mars.gameserver;
 
 import org.apache.log4j.Logger;
 import org.jboss.netty.channel.Channel;
-import ru.mars.gameserver.GameState;
 import ru.mars.seawar.server.game.GameWorker;
 import ru.mars.seawar.server.game.Player;
 import ru.mars.seawar.server.network.message.MessageFactory;
@@ -25,15 +24,18 @@ public abstract class AbstractGameLogic {
     protected Map<Channel, Boolean> playerReady = new HashMap<>();
     protected Logger logger = Logger.getLogger(this.getClass());
     protected boolean firstPlayerMove = false;
-    protected volatile boolean game = true;
+    protected volatile Boolean game = true;
 
     public synchronized void setPlayerReady(Channel playerChannel) {
         playerReady.put(playerChannel, true);
+        onPlayerReady(playerChannel);
     }
 
     public synchronized boolean isAllReady() {
         return playerReady.get(channel1) && playerReady.get(channel2);
     }
+
+    protected abstract void onPlayerReady(Channel channel);
 
     protected void sendGameOverMessage(Integer deadPlayer) {
         channel1.write(MessageFactory.createGameOverMessage(deadPlayer));
